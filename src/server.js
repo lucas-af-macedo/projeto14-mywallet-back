@@ -50,6 +50,37 @@ app.post ('/sign-up', async (req, res) => {
     res.sendStatus(201)
 })
 
+app.post ('/sign-in', async (req, res) => {
+    const validation = signInSchema.validate(req.body,{abortEarly: false})
+    const user = req.body;
+    console.log(user)
+    if(validation.error){
+        const errors = validation.error.details.map((detail)=>detail.message)
+        res.status(422).send(errors)
+        return;
+    }
+
+    try{
+
+        const userExisist = await db.collection('users').findOne({email: user.email})
+
+        if (userExisist && bcrypt.compareSync(user.password, userExisist.password)){
+            const token = uuid()
+
+            await db.collection('sessions').insertOne({
+                userId: userExisist._id,
+                token
+            })
+
+            res.send(token)
+        }else{
+            res.sendStatus(401)
+        }
+
+    } catch(err){
+        res.sendStatus(500)
+    }
+})
 
 app.listen(5000);
 
