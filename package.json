@@ -1,0 +1,32 @@
+{
+  "name": "projeto14-mywallet-back",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./src/server.js",
+    "dev": "npx nodemon ./src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://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@github.com/lucas-af-macedo/projeto14-mywallet-back.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lucas-af-macedo/projeto14-mywallet-back/issues"
+  },
+  "homepage": "https://github.com/lucas-af-macedo/projeto14-mywallet-back#readme",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.6",
+    "express": "^4.18.2",
+    "joi": "^17.7.0",
+    "mongodb": "^4.12.0",
+    "uuid": "^9.0.0"
+  }
+}
