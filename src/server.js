@@ -37,9 +37,7 @@ const transationSchema = joi.object({
 
 const transationPutSchema = joi.object({
     value: joi.number().required(),
-    description: joi.string().required(),
-    type: joi.string().required(),
-    date: joi.number().required()
+    description: joi.string().required()
 })
 
 app.post ('/sign-up', async (req, res) => {
@@ -73,7 +71,7 @@ app.post ('/sign-up', async (req, res) => {
 app.post ('/sign-in', async (req, res) => {
     const validation = signInSchema.validate(req.body,{abortEarly: false})
     const user = req.body;
-    console.log(user)
+    
     if(validation.error){
         const errors = validation.error.details.map((detail)=>detail.message)
         res.status(422).send(errors)
@@ -149,7 +147,7 @@ app.get ('/transations', async (req, res) => {
                 .collection('transation')
                 .find({userId: userExisist.userId}).toArray()
             transations.forEach((item)=>delete item.userId)
-            res.send(transations)
+            res.send(transations.reverse())
         }else{
             res.status(401).send({message:'Token inválido!'})
         }
@@ -159,20 +157,24 @@ app.get ('/transations', async (req, res) => {
     }
 })
 
-app.delete ('/transations/:id', async (req, res) => {
+app.delete ('/transation/:id', async (req, res) => {
     const id = req.params.id
-    const user = req.headers.user
-
+    const token = req.headers.authorization.replace('Bearer ','')
+    
+    
     try{
+        const userExisist = await db.collection('sessions').findOne({token: token})
+
+        if (!userExisist){
+            res.status(401).send({message:'Token inválido!'});
+            return;
+        }
+
         const message = await db.collection('transation').findOne({_id: ObjectId(id)})
 
         if (message){
-            if(user===message.from){
-                await db.collection('transation').deleteOne({_id: ObjectId(id)})
-                res.status(200).send({ message: "Transacao apagada com sucesso!" });
-            }else{
-                res.sendStatus(401)
-            }
+            await db.collection('transation').deleteOne({_id: ObjectId(id)})
+            res.status(200).send({ message: "Transacao apagada com sucesso!" });
         }else{
             res.sendStatus(404)
         }
@@ -183,6 +185,9 @@ app.delete ('/transations/:id', async (req, res) => {
     }
 
 })
+
+
+
 
 app.listen(5000);
 
