@@ -187,6 +187,45 @@ app.delete ('/transation/:id', async (req, res) => {
 })
 
 
+app.put('/transation/:id', async (req, res) =>{
+    const validation = transationPutSchema.validate(req.body,{abortEarly: false})
+    const token = req.headers.authorization.replace('Bearer ','')
+    const {id} = req.params
+    const body = req.body
+
+    if(validation.error){
+        const errors = validation.error.details.map((detail)=>detail.message)
+        res.status(422).send(errors)
+        return;
+    }
+
+
+    try{
+        const userExisist = await db.collection('sessions').findOne({token: token})
+
+        if (!userExisist){
+            res.status(401).send({message:'Token inválido!'});
+            return;
+        }
+        const transation = await db.collection('transation').findOne({_id: ObjectId(id)})
+
+        if (transation){
+            await db.collection('transation').updateOne({
+                _id: transation._id
+            },{
+                $set: body
+            })
+        }else{
+            res.sendStatus(404)
+        }
+
+    } catch (err){
+        console.log(err)
+        res.sendStatus(500)
+    }
+
+    res.sendStatus(201)
+})
 
 
 app.listen(5000);
