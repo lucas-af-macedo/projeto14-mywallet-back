@@ -19,14 +19,20 @@ mongoClient.connect().then(() => {
 });
 
 const signUpSchema = joi.object({
-    email: joi.string().required(),
+    email: joi.string().email().required(),
     name: joi.string().required(),
     password: joi.string().required()
 })
 
 const signInSchema = joi.object({
-    email: joi.string().required(),
+    email: joi.string().email().required(),
     password: joi.string().required()
+})
+
+const transationSchema = joi.object({
+    value: joi.number().required(),
+    description: joi.string().required(),
+    type: joi.string().required()
 })
 
 app.post ('/sign-up', async (req, res) => {
@@ -42,7 +48,12 @@ app.post ('/sign-up', async (req, res) => {
     try{
         const passwordHash = bcrypt.hashSync(user.password, 10);
 
-        await db.collection('users').insertOne({...user, password: passwordHash})
+        const userExisist = await db.collection('users').findOne({...user, password: passwordHash})
+        if(!userExisist)
+            await db.collection('users').insertOne({...user, password: passwordHash})
+        else{
+            res.status(409).send({message: 'Usuário já cadastrado!'})
+        }
 
     } catch(err){
         res.sendStatus(500)
@@ -71,15 +82,46 @@ app.post ('/sign-in', async (req, res) => {
                 userId: userExisist._id,
                 token
             })
-
-            res.send(token)
+            const body = {
+                token: token,
+                name: userExisist.name
+            } 
+            res.send(body)
         }else{
-            res.sendStatus(401)
+            res.status(401).send({message:'Usuário e/ou senha inválidos!'})
+            return;
         }
 
     } catch(err){
         res.sendStatus(500)
     }
+})
+
+app.post ('/transation', async (req, res) => {
+    const validation = transationSchema.validate(req.body,{abortEarly: false})
+    const data = req.body;
+    const token = req.headers.authorization.replace('Bearer ','')
+
+    if(validation.error){
+        const errors = validation.error.details.map((detail)=>detail.message)
+        res.status(422).send(errors)
+        return;
+    }
+
+    try{
+
+        const userExisist = await db.collection('sessions').findOne({token: token})
+        
+        if (userExisist){
+            await db.collection('transation').insertOne({...data,userId: userExisist.userId})
+        }else{
+            res.status(401).send({message:'Token inválido!'})
+        }
+
+    } catch(err){
+        res.sendStatus(500)
+    }
+    res.sendStatus(201)
 })
 
 app.listen(5000);
